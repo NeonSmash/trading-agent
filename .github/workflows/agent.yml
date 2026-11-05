@@ -1,10 +1,13 @@
+
 name: Trading Agent
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
 
 jobs:
-  test:
+  trading-agent:
     runs-on: ubuntu-latest
 
     steps:
@@ -16,8 +19,5 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Test Python
-        run: |
-          python --version
-          echo "Trading agent is running!"
-          echo "GitHub Actions OK"
+      - name: Run Trading Agent
+        run: python src/agent.py
