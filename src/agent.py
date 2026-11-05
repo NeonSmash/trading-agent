@@ -172,7 +172,14 @@ def main():
         raise RuntimeError("Missing API key")
 
     print("TRADING AGENT - TECHNICAL ANALYSIS")
-    print(f"Execution: {datetime.now(timezone.utc)}")
+    from zoneinfo import ZoneInfo
+
+BUDAPEST_TZ = ZoneInfo("Europe/Budapest")
+
+print(
+    "Execution:",
+    datetime.now(BUDAPEST_TZ).strftime("%Y-%m-%d %H:%M:%S %Z")
+)
 
     h1 = analyze_timeframe("1h")
     m15 = analyze_timeframe("15min")
