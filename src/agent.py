@@ -3,12 +3,14 @@ import os
 import requests
 
 from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 
 
 API_KEY = os.environ.get("TWELVE_DATA_API_KEY")
 BASE_URL = "https://api.twelvedata.com/time_series"
 
 SYMBOL = "EUR/USD"
+BUDAPEST_TZ = ZoneInfo("Europe/Budapest")
 
 
 def get_market_data(interval):
@@ -48,7 +50,6 @@ def get_market_data(interval):
             "%Y-%m-%d %H:%M:%S"
         ).replace(tzinfo=timezone.utc)
 
-        # Only use completed candles
         if candle_time + duration <= now:
             candles.append({
                 "time": candle_time,
@@ -70,7 +71,6 @@ def get_market_data(interval):
 
 def calculate_ema(values, period):
     multiplier = 2 / (period + 1)
-
     ema = sum(values[:period]) / period
 
     for price in values[period:]:
@@ -107,14 +107,10 @@ def calculate_rsi(values, period=14):
         return 100.0
 
     rs = avg_gain / avg_loss
-
     return 100 - (100 / (1 + rs))
 
 
 def calculate_macd(values):
-    if len(values) < 35:
-        raise ValueError("Not enough data for MACD")
-
     macd_values = []
 
     for i in range(25, len(values)):
@@ -142,11 +138,9 @@ def analyze_timeframe(interval):
     rsi = calculate_rsi(closes)
     macd, signal, histogram = calculate_macd(closes)
 
-    price = closes[-1]
-
     print(f"\n========== {interval.upper()} ==========")
     print(f"Last closed candle: {candles[-1]['time']}")
-    print(f"Close:       {price:.5f}")
+    print(f"Close:       {closes[-1]:.5f}")
     print(f"EMA 20:      {ema20:.5f}")
     print(f"EMA 50:      {ema50:.5f}")
     print(f"EMA 200:     {ema200:.5f}")
@@ -155,38 +149,24 @@ def analyze_timeframe(interval):
     print(f"Signal:      {signal:.6f}")
     print(f"Histogram:   {histogram:.6f}")
 
-    return {
-        "price": price,
-        "ema20": ema20,
-        "ema50": ema50,
-        "ema200": ema200,
-        "rsi": rsi,
-        "macd": macd,
-        "signal": signal,
-        "histogram": histogram
-    }
-
 
 def main():
     if not API_KEY:
         raise RuntimeError("Missing API key")
 
     print("TRADING AGENT - TECHNICAL ANALYSIS")
-    from zoneinfo import ZoneInfo
+    print(
+        "Execution:",
+        datetime.now(BUDAPEST_TZ).strftime(
+            "%Y-%m-%d %H:%M:%S %Z"
+        )
+    )
 
-BUDAPEST_TZ = ZoneInfo("Europe/Budapest")
+    analyze_timeframe("1h")
+    analyze_timeframe("15min")
 
-print(
-    "Execution:",
-    datetime.now(BUDAPEST_TZ).strftime("%Y-%m-%d %H:%M:%S %Z")
-)
-
-    h1 = analyze_timeframe("1h")
-    m15 = analyze_timeframe("15min")
-
-    print("\n========== ANALYSIS COMPLETE ==========")
-    print("H1 and M15 indicators calculated.")
-    print("No trades will be executed.")
+    print("\nANALYSIS COMPLETE")
+    print("No trades executed.")
 
 
 if __name__ == "__main__":
